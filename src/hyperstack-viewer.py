@@ -2,7 +2,7 @@
 """
 Created on Tue Aug 20 17:21:52 2024
 
-@author: Johannes Höna
+@author: Johannes Hoena
 """
 
 
@@ -91,6 +91,13 @@ class HyperstackViewer:
     
     
     def __init__(self, root):    
+        
+        '''0 : Thresholding + Moments
+           1 : KMeans + Mean'''
+        self.segmentation_mode = 1
+        
+        '''Anzahl der Cluster, in die YOLO-Detections zerlegt werden'''
+        self.kmeans_cluster = 7
         
         '''Aktuelle Cursor-Koordinaten'''
         self.cursor_x = 0
@@ -1178,32 +1185,77 @@ class HyperstackViewer:
         eq = skimage.img_as_ubyte(eq)
         
         
-        # Thresholding anwenden
-        _, eq = cv2.threshold(eq, int(np.percentile(eq,70)), 255, cv2.THRESH_BINARY)
+        if self.segmentation_mode == 0:
+            _, eq = cv2.threshold(eq, int(np.percentile(eq,70)), 255, cv2.THRESH_BINARY)
+            
+            
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+            
+            
+            eq = cv2.erode(eq, kernel, iterations=1)
+    
+              
+            # Konturen finden
+            contours, _ = cv2.findContours(eq, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+            # Zentroiden der Objekte berechnen
+            plastid_coordinates = []
+            for contour in contours:
+                M = cv2.moments(contour)
+                if M['m00'] != 0:
+                    cx = int(M['m10'] / M['m00'])  # x-Koordinate des Schwerpunkts
+                    cy = int(M['m01'] / M['m00'])  # y-Koordinate des Schwerpunkts
+                    plastid_coordinates.append((cx, cy))
+            
+            return plastid_coordinates
         
-        
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-        
-        
-        eq = cv2.erode(eq, kernel, iterations=1)
+        if self.segmentation_mode == 1:
+            k = self.kmeans_cluster
 
-          
-        # Konturen finden
-        contours, _ = cv2.findContours(eq, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # Zentroiden der Objekte berechnen
-        object_coordinates = []
-        for contour in contours:
-            M = cv2.moments(contour)
-            if M['m00'] != 0:
-                cx = int(M['m10'] / M['m00'])  # x-Koordinate des Schwerpunkts
-                cy = int(M['m01'] / M['m00'])  # y-Koordinate des Schwerpunkts
-                object_coordinates.append((cx, cy))
+            '''kmeans clustering'''
+            pixel_values = eq.reshape((-1, 1)).astype(np.float32)
+            _, labels, centers = cv2.kmeans(
+                pixel_values, k, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2), 10, cv2.KMEANS_RANDOM_CENTERS
+            )
+            segmented_image = labels.reshape(image.shape)
         
-        return object_coordinates
-    
-    
-    
+            '''Sortiere Cluster nach groesster Durchschnitts-Intensitaet'''
+            cluster_properties = []
+            for i in range(k):
+                mask = (segmented_image == i).astype(np.uint8)
+                cluster_intensity = np.mean(image[mask == 1])
+                cluster_properties.append((i,cluster_intensity))
+            
+            cluster_properties.sort(key=lambda x: x[1],reverse=True)
+           
+            '''Temporaeres Bild erzeugen mit Pixelkoordinaten des hellsten Clusters'''
+            brightest_cluster_label = cluster_properties[0][0]
+            output_image = np.zeros_like(eq)
+            output_image[segmented_image == brightest_cluster_label] = 255
+            
+            '''Erosion mit 2x2 Kernel, um Patches zu separieren'''
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
+            output_image = cv2.erode(output_image, kernel, iterations=1)
+            
+            '''Konturen der Patches ermitteln'''
+            contours, _ = cv2.findContours(output_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            plastid_coordinates = []
+            for contour in contours:
+                temp = np.zeros_like(eq)
+                temp = cv2.drawContours(temp,contour,0,255,3)
+                
+                coords = np.column_stack(np.where(temp > 0))
+                if len(coords) > 0:
+                    cy, cx = np.mean(coords, axis=0).astype(int)
+                    plastid_coordinates.append((cx, cy))
+                else:
+                    cx, cy = -1, -1  # Kein gültiger Schwerpunkt
+                
+            return plastid_coordinates 
+              
+            
+            
     def export(self):
         '''Methode zum Exportieren der ROIs'''
         try:
