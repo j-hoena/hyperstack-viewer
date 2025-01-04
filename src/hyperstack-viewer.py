@@ -619,6 +619,8 @@ class HyperstackViewer:
                 self.placeholder_label = Label(self.toolbarframe, text="",height = 2)
                 self.placeholder_label.grid(row=4,column=0)
                 
+                self.mainframe.config(text = file_path.name)
+                
                 self.update_img()
                 self.draw_hist(self.origimages[self.t_index][self.z_index])
                 self.draw_plot()
@@ -1235,7 +1237,9 @@ class HyperstackViewer:
             
             '''Erosion mit 2x2 Kernel, um Patches zu separieren'''
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
-            output_image = cv2.erode(output_image, kernel, iterations=1)
+            #output_image = cv2.erode(output_image, kernel, iterations=1)
+            output_image = cv2.morphologyEx(output_image,cv2.MORPH_CLOSE,kernel, iterations =1)
+            
             
             '''Konturen der Patches ermitteln'''
             contours, _ = cv2.findContours(output_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
