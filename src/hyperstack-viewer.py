@@ -23,6 +23,7 @@ from tkinter import ttk
 
 from PIL import Image, ImageTk, ImageEnhance, ImageDraw
 from PIL.TiffTags import TAGS
+
 import re
 
 import numpy as np
@@ -52,31 +53,8 @@ class CustomNavigationToolbar(NavigationToolbar2Tk):
     
 
     def set_message(self, message):
-        # Überschreiben der Methode, um keine Koordinaten anzuzeigen
+        # Überschreiben der Methode zum Entfernen der Koordinaten-Anzeige
         pass
-
-class CroppedDetection:
-    '''Objekt zum Speichern der YOLOv5 Detections.
-
-       Parameter
-       -----------
-       image : Cropped Region des original Slice
-       xmin,ymin,xmax,ymax : Bounding Box Limits
-       coordinates :  Koordinaten der Plastiden
-
-
-    '''
-    def __init__(self, image,xmin,ymin,xmax,ymax,coordinates):
-        self.image = image
-        self.xmin = xmin
-        self.ymin = ymin
-        self.xmax = xmax
-        self.ymax = ymax
-        self.coordinates = coordinates
-
-
-
-
 
 
 class HyperstackViewer:
@@ -92,30 +70,21 @@ class HyperstackViewer:
     
     def __init__(self, root):    
         
-        '''0 : Thresholding + Moments
-           1 : KMeans + Mean'''
-        self.segmentation_mode = 1
-        
+            
         '''Anzahl der Cluster, in die YOLO-Detections zerlegt werden'''
-        self.kmeans_cluster = 7
+        self.num_clusters = 7
         
         '''Aktuelle Cursor-Koordinaten'''
         self.cursor_x = 0
         self.cursor_y = 0
         
         
-        self.contour_threshold = 150
-        
-        self.cropped_images = []
-        
         '''Confidence-Threshold zum Anzeigen der Cluster-Detections'''
         self.yolo_threshold = 0.5
         
         self.draw_clusters = False
         self.draw_plastides = False
-        
-        '''Speichert Detections als Cropped-Version'''
-        self.save_detections = False
+
         
         '''Variablen zum Speichern des Modells und der Detections'''
         self.model = 0
@@ -160,9 +129,7 @@ class HyperstackViewer:
         
         self.root = root
         self.root.title("Hyperstack Viewer")
-        #self.root.state('zoomed')
-        self.root.attributes("-topmost", True)
-        #self.root.config(bg="#22303C")
+        #self.root.attributes("-topmost", True)
         
         
         
@@ -248,11 +215,23 @@ class HyperstackViewer:
         self.img_canvas = Canvas(self.mainframe, background="black", width=self.canvas_width,height=self.canvas_height)
         self.img_canvas.grid(row=0,column=0,columnspan=3)
         
-        self.img_canvas.bind("<Button-1>", self.mouse_down_left)                   # linksklick
-        self.img_canvas.bind("<Button-3>", self.mouse_down_right)  
-        self.img_canvas.bind("<B1-Motion>", self.mouse_move_left)                  # drag
-        self.img_canvas.bind("<Motion>", self.mouse_move)                          # MouseMove
-        self.img_canvas.bind("<Double-Button-1>", self.mouse_double_click_left)    # MouseDoubleClick
+        
+        '''linksklick'''
+        self.img_canvas.bind("<Button-1>", self.mouse_down_left)   
+        
+        '''rechtsklick'''        
+        self.img_canvas.bind("<Button-3>", self.mouse_down_right) 
+        
+        '''drag bei linksklick + bewegung'''                
+        self.img_canvas.bind("<B1-Motion>", self.mouse_move_left)
+        
+        '''bewegung ohne klick'''
+        self.img_canvas.bind("<Motion>", self.mouse_move)
+        
+        '''Doppelklick'''                    
+        self.img_canvas.bind("<Double-Button-1>", self.mouse_double_click_left) 
+        
+        '''zoom per mousewheel'''
         self.img_canvas.bind("<MouseWheel>", self.mouse_wheel)     
         
         
@@ -282,8 +261,6 @@ class HyperstackViewer:
         
         self.plotlabel = Label(self.plotframe,text="")
         self.plotlabel.grid(row=0,column=0)
-
-        #TODO: plot noch irgendwie als objekt einbinden, damit der überschrieben werden kann
         
         self.placeholder_label = Label(self.toolbarframe, text="",height = 10)
         self.placeholder_label.grid(row=4,column=0)
@@ -393,7 +370,9 @@ class HyperstackViewer:
         '''Methode zum laden eines Tiff-Stacks'''
         
         try:
-            
+            '''mode 0: ermitteln des filepaths
+               mode 1: neu laden aus vorhandenem filepath           
+            '''
             if mode == 0:
                 file_path = filedialog.askopenfile(title="Choose TIFF stack", filetypes=[("Tiff images", "*.tif")],parent = self.root)
                 
@@ -425,7 +404,7 @@ class HyperstackViewer:
             self.brightnessbutton_up.config(state = "disabled")
             
             
-            
+            '''Reset der internen Variablen'''
             self.pilimages = []
             self.origimages = []
             
@@ -455,6 +434,8 @@ class HyperstackViewer:
             
             self.threshbutton_down.config(state = "disabled")
             self.threshbutton_up.config(state = "disabled")
+            
+            
             
             
             if self.image_path:
@@ -633,14 +614,7 @@ class HyperstackViewer:
        
     
     def draw_hist(self,img):
-        '''Erstellt histogramm fuer Bild und zeichnet es im Histogramm-Frame
-        
-        Parameter
-        ---------
-        
-        img : Array
-            Eingabebild
-        '''
+        '''Erstellt histogramm fuer Bild und zeichnet es im Histogramm-Frame'''
         
         try:
             
@@ -800,33 +774,28 @@ class HyperstackViewer:
                 self.model = torch.hub.load('ultralytics/yolov5', "custom", path=weights_path.name, force_reload=True)
                 
                 self.detections = []
-                self.cropped_images = []
-                
-                #TODO: fix naming of temp variables
+
                                 
                 for i in range(self.timestamps):
                   
-                    temp_crops = []
+        
                     temp_arr = []
                     
                     for j in range(self.z_layers):
                         
                         temp_img = self.pilimages[i][j]
                         temp_img_orig = Image.fromarray(self.origimages[i][j])
-   
-                        
-               
-                        #todo:Inferenz auf originalen Bildern
+
+                        #Inferenz funktioniert nur auf 8bit-int
                         results = self.model(temp_img)
                         
                         results_formatted = results.pandas().xyxy[0].to_dict(orient="records")
-                        print("results:")
+                        print("number of results:")
                         print(len(results_formatted))
                         temp_arr.append(results_formatted)
                        
                         count = 0
-                        temp_detects = []
-                        
+
                         for x in results_formatted:
                             x1, y1, x2, y2 = int(x['xmin']), int(x['ymin']), int(x['xmax']), int(x['ymax'])
                         
@@ -835,33 +804,21 @@ class HyperstackViewer:
                             '''Crop die Detection zur Segmentierung'''
                             temp_crop = temp_img_orig.crop(border)
                             print(np.asarray(temp_crop).shape)
-                            
-                            '''optional Speichern zu Testzwecken'''
-                            if self.save_detections:
-                                path = r"./detections/"
-                                path = path + f"t{i}_z{j}_cluster{count}.tif"
-                                temp_crop.save(path)
+
                             
                             #Plastiden-Segmentierung
-                            coords = self.contour_segmentierung(np.asarray(temp_crop))
+                            coords = self.plastid_segmentation(np.asarray(temp_crop))
                             
                             for c in coords:
                                 self.plastid_coords[i][j].append((c[0]+x1,c[1]+y1))
                             
-                            
-                            temp_detects.append(CroppedDetection(np.asarray(temp_crop), x1, y1, x2, y2, coords))
-                            
-                            
                             count += 1
-                        
-                 
-                        temp_crops.append(temp_detects)
-                     
+         
                         progress += progressstep
                         progress_var.set(progress)
                         popup.update()
                         
-                    self.cropped_images.append(temp_crops)    
+
                     self.detections.append(temp_arr)    
             
             
@@ -965,7 +922,7 @@ class HyperstackViewer:
         
         ax.scatter(x_arr, y_arr, z_arr, c='r', marker='o')
         
-        ax.set_title(f't-frame {self.t_index}')
+        ax.set_title(f"t-frame {self.t_index+1}")
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
@@ -1179,7 +1136,7 @@ class HyperstackViewer:
               return  
    
         
-    def contour_segmentierung(self, image):
+    def plastid_segmentation(self, image):
 
         eq = skimage.exposure.equalize_hist(image)
         
@@ -1187,76 +1144,51 @@ class HyperstackViewer:
         eq = skimage.img_as_ubyte(eq)
         
         
-        if self.segmentation_mode == 0:
-            _, eq = cv2.threshold(eq, int(np.percentile(eq,70)), 255, cv2.THRESH_BINARY)
-            
-            
-            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-            
-            
-            eq = cv2.erode(eq, kernel, iterations=1)
-    
-              
-            # Konturen finden
-            contours, _ = cv2.findContours(eq, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-            # Zentroiden der Objekte berechnen
-            plastid_coordinates = []
-            for contour in contours:
-                M = cv2.moments(contour)
-                if M['m00'] != 0:
-                    cx = int(M['m10'] / M['m00'])  # x-Koordinate des Schwerpunkts
-                    cy = int(M['m01'] / M['m00'])  # y-Koordinate des Schwerpunkts
-                    plastid_coordinates.append((cx, cy))
-            
-            return plastid_coordinates
-        
-        if self.segmentation_mode == 1:
-            k = self.kmeans_cluster
+        k = self.num_clusters
 
-            '''kmeans clustering'''
-            pixel_values = eq.reshape((-1, 1)).astype(np.float32)
-            _, labels, centers = cv2.kmeans(
-                pixel_values, k, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2), 10, cv2.KMEANS_RANDOM_CENTERS
-            )
-            segmented_image = labels.reshape(image.shape)
+        '''kmeans clustering'''
+        pixel_values = eq.reshape((-1, 1)).astype(np.float32)
+        _, labels, centers = cv2.kmeans(
+            pixel_values, k, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2), 10, cv2.KMEANS_RANDOM_CENTERS
+        )
+        segmented_image = labels.reshape(image.shape)
         
-            '''Sortiere Cluster nach groesster Durchschnitts-Intensitaet'''
-            cluster_properties = []
-            for i in range(k):
-                mask = (segmented_image == i).astype(np.uint8)
-                cluster_intensity = np.mean(image[mask == 1])
-                cluster_properties.append((i,cluster_intensity))
+        '''Sortiere Cluster nach groesster Durchschnitts-Intensitaet'''
+        cluster_properties = []
+        for i in range(k):
+            mask = (segmented_image == i).astype(np.uint8)
+            cluster_intensity = np.mean(image[mask == 1])
+            cluster_properties.append((i,cluster_intensity))
             
-            cluster_properties.sort(key=lambda x: x[1],reverse=True)
+        cluster_properties.sort(key=lambda x: x[1],reverse=True)
            
-            '''Temporaeres Bild erzeugen mit Pixelkoordinaten des hellsten Clusters'''
-            brightest_cluster_label = cluster_properties[0][0]
-            output_image = np.zeros_like(eq)
-            output_image[segmented_image == brightest_cluster_label] = 255
+        '''Temporaeres Bild erzeugen mit Pixelkoordinaten des hellsten Clusters'''
+        brightest_cluster_label = cluster_properties[0][0]
+        output_image = np.zeros_like(eq)
+        output_image[segmented_image == brightest_cluster_label] = 255
             
-            '''Erosion mit 2x2 Kernel, um Patches zu separieren'''
-            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
-            #output_image = cv2.erode(output_image, kernel, iterations=1)
-            output_image = cv2.morphologyEx(output_image,cv2.MORPH_CLOSE,kernel, iterations =1)
+        '''Closing mit 2x2 Kernel, um Rauschartefakte zu entfernen'''
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
+
+        output_image = cv2.morphologyEx(output_image,cv2.MORPH_CLOSE,kernel, iterations =1)
             
             
-            '''Konturen der Patches ermitteln'''
-            contours, _ = cv2.findContours(output_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        '''Konturen der Patches ermitteln'''
+        contours, _ = cv2.findContours(output_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
-            plastid_coordinates = []
-            for contour in contours:
-                temp = np.zeros_like(eq)
-                temp = cv2.drawContours(temp,contour,0,255,3)
+        plastid_coordinates = []
+        for contour in contours:
+            temp = np.zeros_like(eq)
+            temp = cv2.drawContours(temp,contour,0,255,3)
+              
+            coords = np.column_stack(np.where(temp > 0))
+            if len(coords) > 0:
+                cy, cx = np.mean(coords, axis=0).astype(int)
+                plastid_coordinates.append((cx, cy))
+            else:
+                cx, cy = -1, -1  # Kein gültiger Schwerpunkt
                 
-                coords = np.column_stack(np.where(temp > 0))
-                if len(coords) > 0:
-                    cy, cx = np.mean(coords, axis=0).astype(int)
-                    plastid_coordinates.append((cx, cy))
-                else:
-                    cx, cy = -1, -1  # Kein gültiger Schwerpunkt
-                
-            return plastid_coordinates 
+        return plastid_coordinates 
               
             
             
@@ -1406,11 +1338,7 @@ class HyperstackViewer:
                     indexes.append(i)
             
             self.plastid_coords[self.t_index][self.z_index] = [i for j, i in enumerate(self.plastid_coords[self.t_index][self.z_index]) if j not in indexes]
-            
-            #for index in sorted(indexes, reverse=True):
-             #   del self.plastid_coords[self.t_index][self.z_index][index]
-                
-            
+    
             
             self.temp = self.pilimages[self.t_index][self.z_index]
             self.temp = self.apply_filters(self.temp)
