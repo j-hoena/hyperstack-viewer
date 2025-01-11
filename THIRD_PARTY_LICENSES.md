@@ -1,6 +1,7 @@
-#Third-party licenses
+# Third-party licenses
 
-##roifile
+## roifile
+
 BSD 3-Clause License
 
 Copyright (c) 2020-2024, Christoph Gohlke
@@ -32,7 +33,8 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-##pytorch
+## pytorch
+
 From PyTorch:
 
 Copyright (c) 2016-     Facebook, Inc            (Adam Paszke)
@@ -118,7 +120,8 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-##tk
+## tk
+
 This software is copyrighted by the Regents of the University of
 California, Sun Microsystems, Inc., Scriptics Corporation, ActiveState
 Corporation, Apple Inc. and other parties.  The following terms apply to
@@ -160,7 +163,7 @@ authors grant the U.S. Government and others acting in its behalf
 permission to use and distribute the software in accordance with the
 terms specified in this license.
 
-##Pillow
+## Pillow
 
 The Python Imaging Library (PIL) is
 
@@ -193,7 +196,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
-##opencv-python
+## opencv-python
 
 MIT License
 
@@ -217,7 +220,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-##numpy
+## numpy
 Copyright (c) 2005-2025, NumPy Developers.
 All rights reserved.
 
@@ -249,7 +252,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-##matplotlib
+## matplotlib
 
 License agreement for matplotlib versions 1.3.0 and later
 =========================================================
@@ -301,7 +304,7 @@ products or services of Licensee, or any third party.
 Licensee agrees to be bound by the terms and conditions of this License
 Agreement.
 
-##scikit-image
+## scikit-image
 
 Files: *
 Copyright: 2009-2022 the scikit-image team
