@@ -46,7 +46,7 @@ import sys
 
 import roifile
 
-
+import os
 
 class CustomNavigationToolbar(NavigationToolbar2Tk):
     '''Override zum Deaktivieren der Koordinaten-Ausgabe im 3d-Plot'''
@@ -232,7 +232,11 @@ class HyperstackViewer:
         self.img_canvas.bind("<Double-Button-1>", self.mouse_double_click_left) 
         
         '''zoom per mousewheel'''
-        self.img_canvas.bind("<MouseWheel>", self.mouse_wheel)     
+        self.img_canvas.bind("<MouseWheel>", self.mouse_wheel) 
+        
+        '''Zoom Linux'''
+        self.img_canvas.bind("<Button-4>", self.mouse_wheel_linux)
+        self.img_canvas.bind("<Button-5>", self.mouse_wheel_linux)
         
         
         self.toolbarframe = LabelFrame(self.parentframe,text="Toolbar",width=self.canvas_width/2, height=self.canvas_height)
@@ -1198,7 +1202,7 @@ class HyperstackViewer:
             rois = []
             
             files = [('ROI-Zip', '*.zip')]
-            filepath = asksaveasfile(filetypes = files, defaultextension = files,parent = self.root)    
+            filepath = asksaveasfile(filetypes = files, defaultextension = '.zip',initialfile=os.path.splitext(os.path.basename(self.image_path))[0]+'.zip',parent = self.root)    
             
             if not filepath:  # abort
                 return
@@ -1403,6 +1407,17 @@ class HyperstackViewer:
        self.scale(scale)
        self.translate(cx, cy)    
        
+    def mouse_wheel_linux(self, event):
+        if self.current_img == 0:
+            return
+
+        '''Zoom/skalierung bei Linux'''
+        if event.num == 4:
+            print("mwheelup")
+            self.scale_at(1.25, event.x, event.y)
+        elif event.num == 5:
+            print("mwheeldown")
+            self.scale_at(0.8, event.x, event.y)
     
     def mouse_wheel(self, event):
        '''Zoom/Skalierung per Mausrad'''
