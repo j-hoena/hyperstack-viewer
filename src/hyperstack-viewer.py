@@ -369,7 +369,64 @@ class HyperstackViewer:
         
     def open_stack(self):
         self.open_file(0)
+    
+    def deactivate_gui(self):
+           
+        self.menu.entryconfig(1, state="disabled")
+        self.menu.entryconfig(2,state="disabled")
         
+        self.file_menu.entryconfig("Load YOLO-Model", state = "disabled")
+        self.file_menu.entryconfig("Export ROIs", state = "disabled")
+        self.edit_menu.entryconfig("Brightness & Contrast", state = "disabled")
+        self.edit_menu.entryconfig("Histogram Slicing", state = "disabled")
+        self.edit_menu.entryconfig("Histogram Equalization", state = "disabled")
+        self.edit_menu.entryconfig("Reset Changes", state = "disabled")
+        
+        '''Deaktiviere Navigation durch Stack'''
+        self.zbutton_back.config(state = "disabled")
+        self.zbutton_next.config(state = "disabled")
+        self.tbutton_back.config(state = "disabled")
+        self.tbutton_next.config(state = "disabled")
+        
+        
+        '''Deaktiviere Bild-Modifikation'''
+        self.contrastbutton_down.config(state = "disabled")
+        self.contrastbutton_up.config(state = "disabled")
+        self.brightnessbutton_down.config(state = "disabled")
+        self.brightnessbutton_up.config(state = "disabled")
+        
+        self.plastide_edit_button.config(state="disabled")
+        self.plastid_toggle_button.config(state = "disabled")
+        
+        
+    def activate_gui(self):
+        
+        self.menu.entryconfig(1, state="normal")
+        self.menu.entryconfig(2,state="normal")
+        
+        self.file_menu.entryconfig("Load YOLO-Model", state = "normal")
+        self.file_menu.entryconfig("Export ROIs", state = "normal")
+        self.edit_menu.entryconfig("Brightness & Contrast", state = "normal")
+        self.edit_menu.entryconfig("Histogram Slicing", state = "normal")
+        self.edit_menu.entryconfig("Histogram Equalization", state = "normal")
+        self.edit_menu.entryconfig("Reset Changes", state = "normal")
+        
+        '''Aktiviere Navigation durch Stack'''
+        self.zbutton_back.config(state = "normal")
+        self.zbutton_next.config(state = "normal")
+        self.tbutton_back.config(state = "normal")
+        self.tbutton_next.config(state = "normal")
+        
+        
+        '''Aktiviere Bild-Modifikation'''
+        self.contrastbutton_down.config(state = "normal")
+        self.contrastbutton_up.config(state = "normal")
+        self.brightnessbutton_down.config(state = "normal")
+        self.brightnessbutton_up.config(state = "normal")
+        
+        self.plastide_edit_button.config(state="normal")
+        self.plastid_toggle_button.config(state = "normal")
+    
     def open_file(self,mode):
         '''Methode zum laden eines Tiff-Stacks'''
         
@@ -385,27 +442,8 @@ class HyperstackViewer:
                 
                 self.image_path = file_path.name
             
-            
             '''Disable, falls Vorgang fehlschlaegt'''
-            
-            self.file_menu.entryconfig("Load YOLO-Model", state = "disabled")
-            self.edit_menu.entryconfig("Brightness & Contrast", state = "disabled")
-            self.edit_menu.entryconfig("Histogram Slicing", state = "disabled")
-            self.edit_menu.entryconfig("Histogram Equalization", state = "disabled")
-            self.edit_menu.entryconfig("Reset Changes", state = "disabled")
-            
-            '''Aktiviere Navigation durch Stack'''
-            self.zbutton_back.config(state = "disabled")
-            self.zbutton_next.config(state = "disabled")
-            self.tbutton_back.config(state = "disabled")
-            self.tbutton_next.config(state = "disabled")
-            
-            
-            '''Aktiviere Bild-Modifikation'''
-            self.contrastbutton_down.config(state = "disabled")
-            self.contrastbutton_up.config(state = "disabled")
-            self.brightnessbutton_down.config(state = "disabled")
-            self.brightnessbutton_up.config(state = "disabled")
+            self.deactivate_gui()
             
             
             '''Reset der internen Variablen'''
@@ -432,14 +470,10 @@ class HyperstackViewer:
             self.z_index  =  0
             self.t_index = 0
             
-            self.plastide_edit_button.config(state="disabled")
+
             self.yolo_toggle_button.config(state = "disabled")
-            self.plastid_toggle_button.config(state = "disabled")
-            
             self.threshbutton_down.config(state = "disabled")
             self.threshbutton_up.config(state = "disabled")
-            
-            
             
             
             if self.image_path:
@@ -569,30 +603,7 @@ class HyperstackViewer:
                 print(len(self.pilimages))
                 print(len(self.origimages))
                 
-                '''Aktiviere Navigation durch Stack'''
-                self.zbutton_back.config(state = "normal")
-                self.zbutton_next.config(state = "normal")
-                self.tbutton_back.config(state = "normal")
-                self.tbutton_next.config(state = "normal")
-                
-                
-                '''Aktiviere Bild-Modifikation'''
-                self.contrastbutton_down.config(state = "normal")
-                self.contrastbutton_up.config(state = "normal")
-                self.brightnessbutton_down.config(state = "normal")
-                self.brightnessbutton_up.config(state = "normal")
-                
-                '''Aktiviere Menu-Eintraege'''
-                self.file_menu.entryconfig("Load YOLO-Model", state = "normal")
-                self.edit_menu.entryconfig("Brightness & Contrast", state = "normal")
-                self.edit_menu.entryconfig("Histogram Slicing", state = "normal")
-                self.edit_menu.entryconfig("Histogram Equalization", state = "normal")
-                self.edit_menu.entryconfig("Reset Changes", state = "normal")
-                
-                
-                self.plastide_edit_button.config(state = "normal")
-                self.plastid_toggle_button.config(state = "normal")
-                self.file_menu.entryconfig("Export ROIs", state = "normal")
+                self.activate_gui()
                 
                 popup.destroy()
                 
@@ -762,14 +773,21 @@ class HyperstackViewer:
             weights_path = filedialog.askopenfile(title="Choose YOLO Weights", filetypes=[("YOLO weights","*.pt")],parent = self.root)
             if not weights_path:  # abort
                 return
-            if weights_path:    
+            if weights_path:  
+                
+                
+                self.deactivate_gui()
+            
+                self.yolo_toggle_button.config(state = "disabled")
+                self.threshbutton_down.config(state = "disabled")
+                self.threshbutton_up.config(state = "disabled")
                 
                 popup = Toplevel()
                 popup.attributes("-topmost", True)
                 Label(popup, text="Loading Predictions...").grid(row=0,column=0)
                 progress_var = DoubleVar()
                 progress_bar = ttk.Progressbar(popup, variable=progress_var, maximum=self.n_frames)
-                progress_bar.grid(row=1, column=0)#.pack(fill=tk.X, expand=1, side=tk.BOTTOM)
+                progress_bar.grid(row=1, column=0)
                 popup.pack_slaves()
                 
                 progress = 0
@@ -779,7 +797,6 @@ class HyperstackViewer:
                 
                 self.detections = []
 
-                                
                 for i in range(self.timestamps):
                   
         
@@ -828,11 +845,13 @@ class HyperstackViewer:
             
                 popup.destroy()
                 
-                self.plastid_toggle_button.config(state = "normal")
                 self.yolo_toggle_button.config(state = "normal")
                 self.threshbutton_down.config(state = "normal")
                 self.threshbutton_up.config(state = "normal")
-                self.plastide_edit_button.config(state = "normal")
+                
+                self.activate_gui()
+                
+                
                 
                 self.draw_plot()
                 
@@ -1383,7 +1402,7 @@ class HyperstackViewer:
        if len(image_point) != 0:
            self.cursor_x = int(image_point[0])
            self.cursor_y = int(image_point[1])
-           self.xylabel["text"] = (f"({image_point[0]:.2f}, {image_point[1]:.2f}), Value {temp[int(image_point[1]),int(image_point[0])]}")
+           self.xylabel["text"] = (f"({int(image_point[0])}, {int(image_point[1])}), Value {temp[int(image_point[1]),int(image_point[0])]}")
        else:
    
            self.xylabel["text"] = ("(--, --)")    
