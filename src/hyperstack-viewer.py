@@ -615,7 +615,7 @@ class HyperstackViewer:
                 self.placeholder_label = Label(self.toolbarframe, text="",height = 2)
                 self.placeholder_label.grid(row=4,column=0)
                 
-                self.mainframe.config(text = file_path.name)
+                self.mainframe.config(text = self.image_path)
                 
                 self.update_img()
                 self.draw_hist(self.origimages[self.t_index][self.z_index])
@@ -983,7 +983,7 @@ class HyperstackViewer:
     def hist_equal(self):
         '''Methode zum Histogrammausgleich aller Slices'''
         
-        
+        self.deactivate_gui()
         popup = Toplevel()
         popup.attributes("-topmost", True)
         Label(popup, text="Histogrammausgleich...").grid(row=0,column=0)
@@ -1022,6 +1022,7 @@ class HyperstackViewer:
             
             
             popup.destroy()
+            self.activate_gui()
             self.update_img()
             self.draw_hist(self.origimages[self.t_index][self.z_index])           
                 
@@ -1046,7 +1047,9 @@ class HyperstackViewer:
             uppervalue = simpledialog.askinteger("Input", "Obere Grenze:",parent = self.root)
             if not uppervalue:  # abort
                 return
-                
+            
+            self.deactivate_gui()
+            
             popup = Toplevel()
             popup.attributes("-topmost", True)
             Label(popup, text="Slicing histograms...").grid(row=0,column=0)
@@ -1085,6 +1088,7 @@ class HyperstackViewer:
                     popup.update()
             
             popup.destroy()
+            self.activate_gui()
             self.update_img()
             self.draw_hist(self.origimages[self.t_index][self.z_index])           
             return  
@@ -1109,7 +1113,10 @@ class HyperstackViewer:
      
               if not contrastvalue:  # abort
                   return
-                  
+              
+                
+              self.deactivate_gui()
+                
               popup = Toplevel()
               popup.attributes("-topmost", True)
               Label(popup, text="Passe Helligkeit und Kontrast an...").grid(row=0,column=0)
@@ -1150,7 +1157,12 @@ class HyperstackViewer:
            
                       popup.update()
               
+                
+              
               popup.destroy()
+              
+              self.activate_gui()
+              
               self.update_img()
               self.draw_hist(self.origimages[self.t_index][self.z_index])           
               return  
@@ -1229,6 +1241,8 @@ class HyperstackViewer:
             if not filepath:  # abort
                 return
             
+            self.deactivate_gui()
+            
             popup = Toplevel()
             popup.attributes("-topmost", True)
             Label(popup, text="Export...").grid(row=0,column=0)
@@ -1281,6 +1295,7 @@ class HyperstackViewer:
                 r[1].tofile(filepath.name)
                    
             popup.destroy()
+            self.activate_gui()
             m = "Speichern erfolgreich!"
             tk.messagebox.showinfo(title="Info", message=m)
             
