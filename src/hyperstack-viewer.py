@@ -300,13 +300,13 @@ class HyperstackViewer:
         self.yolo_toggle_button = Checkbutton(self.toolframe, text="Draw Detections", command=self.toggle_yolo)
         self.yolo_toggle_button.grid(row=4,column=1)
         
-        self.plastid_toggle_button = Checkbutton(self.toolframe, text="Draw Plastides", command=self.toggle_plastides)
+        self.plastid_toggle_button = Checkbutton(self.toolframe, text="Draw Plastids", command=self.toggle_plastides)
         self.plastid_toggle_button.grid(row=5,column=1)
         
         
         
         '''Plastid Edit'''
-        self.plastide_edit_button = Button(self.edit_plastide_frame, text = "Edit Plastides", command=self.toggle_edit_mode)
+        self.plastide_edit_button = Button(self.edit_plastide_frame, text = "Edit Plastids", command=self.toggle_edit_mode)
         self.plastide_edit_button.grid(row=0,column=0)
         
         self.plastide_edit_label = Label(self.edit_plastide_frame, text = "Edit Mode: Off")
@@ -625,6 +625,8 @@ class HyperstackViewer:
             traceback.print_exc()
             m = "Fehler beim Oeffnen der Datei. " + str(e)
             tk.messagebox.showinfo(title="Fehler", message=m)
+            self.menu.entryconfig(1, state="normal")
+            
             return    
        
     
@@ -757,7 +759,7 @@ class HyperstackViewer:
         if self.plastide_edit_mode:
             dst = dst.convert("RGBA")
             draw = ImageDraw.Draw(dst)
-            draw.text([10,10],"Edit Plastides - Left Click: Add - Right Click: Remove", fill=(0,255,0),font_size=15)
+            draw.text([10,10],"Edit Plastids - Left Click: Add - Right Click: Remove", fill=(0,255,0),font_size=15)
             
         self.current_img = ImageTk.PhotoImage(dst)
          
@@ -864,6 +866,7 @@ class HyperstackViewer:
             m = "Fehler bei der YOLO-Inferenz. " + str(e)
             tk.messagebox.showinfo(title="Fehler", message=m)
             popup.destroy()
+            self.activate_gui()
             return    
 
     def draw_plastid_ellipse(self):
